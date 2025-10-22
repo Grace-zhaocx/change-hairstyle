@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import { API_URLS } from '../../api/config'
 
 export interface Image {
   id: string
@@ -41,7 +42,7 @@ export const uploadImage = createAsyncThunk(
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await fetch('/api/v1/images/upload', {
+    const response = await fetch(API_URLS.IMAGES.UPLOAD, {
       method: 'POST',
       body: formData,
     })

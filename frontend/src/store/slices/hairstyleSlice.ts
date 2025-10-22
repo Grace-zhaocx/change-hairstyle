@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
+import { API_URLS } from '../../api/config'
 
 export interface HairstyleTask {
   id: string
@@ -60,7 +61,7 @@ export const processHairstyle = createAsyncThunk(
       lighting_match: number
     }
   }) => {
-    const response = await fetch('/api/v1/hairstyle/process', {
+    const response = await fetch(API_URLS.HAIRSTYLES.TEXT_TO_HAIR, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -79,7 +80,7 @@ export const processHairstyle = createAsyncThunk(
 export const getTaskStatus = createAsyncThunk(
   'hairstyle/getTaskStatus',
   async (taskId: string) => {
-    const response = await fetch(`/api/v1/hairstyle/task/${taskId}`)
+    const response = await fetch(API_URLS.HAIRSTYLES.TASK_STATUS(taskId))
 
     if (!response.ok) {
       throw new Error('Failed to get task status')

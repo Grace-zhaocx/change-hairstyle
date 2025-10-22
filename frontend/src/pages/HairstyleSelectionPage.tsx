@@ -1,3 +1,5 @@
+import { API_URLS } from '../api/config';
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Typography, Tabs, Form, Select, Slider, Input, Row, Col, message } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -36,15 +38,15 @@ const HairstyleSelectionPage: React.FC = () => {
   const [imageId] = useState(location.state?.imageId);
 
   const [description, setDescription] = useState<HairstyleDescription>({
-    length: 'medium',
-    style: 'wavy',
+    length: 'short',
+    style: 'straight',
     color: 'natural'
   });
 
   const [parameters, setParameters] = useState<HairstyleParameters>({
-    blend_strength: 85,
-    edge_smoothing: 70,
-    lighting_match: 60
+    blend_strength: 0.85,
+    edge_smoothing: 0.7,
+    lighting_match: 0.6
   });
 
   useEffect(() => {
@@ -62,7 +64,7 @@ const HairstyleSelectionPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/v1/hairstyle/text-to-hair', {
+      const response = await fetch(API_URLS.HAIRSTYLES.TEXT_TO_HAIR, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,15 +272,15 @@ const HairstyleSelectionPage: React.FC = () => {
                   <div>
                     <div className="flex justify-between mb-2">
                       <span>发型融合度</span>
-                      <span>{parameters.blend_strength}%</span>
+                      <span>{Math.round(parameters.blend_strength * 100)}%</span>
                     </div>
                     <Slider
                       min={0}
                       max={100}
-                      value={parameters.blend_strength}
+                      value={Math.round(parameters.blend_strength * 100)}
                       onChange={(value) => setParameters({
                         ...parameters,
-                        blend_strength: value
+                        blend_strength: value / 100
                       })}
                     />
                   </div>
@@ -286,15 +288,15 @@ const HairstyleSelectionPage: React.FC = () => {
                   <div>
                     <div className="flex justify-between mb-2">
                       <span>边缘过渡</span>
-                      <span>{parameters.edge_smoothing}%</span>
+                      <span>{Math.round(parameters.edge_smoothing * 100)}%</span>
                     </div>
                     <Slider
                       min={0}
                       max={100}
-                      value={parameters.edge_smoothing}
+                      value={Math.round(parameters.edge_smoothing * 100)}
                       onChange={(value) => setParameters({
                         ...parameters,
-                        edge_smoothing: value
+                        edge_smoothing: value / 100
                       })}
                     />
                   </div>
@@ -302,15 +304,15 @@ const HairstyleSelectionPage: React.FC = () => {
                   <div>
                     <div className="flex justify-between mb-2">
                       <span>光照匹配</span>
-                      <span>{parameters.lighting_match}%</span>
+                      <span>{Math.round(parameters.lighting_match * 100)}%</span>
                     </div>
                     <Slider
                       min={0}
                       max={100}
-                      value={parameters.lighting_match}
+                      value={Math.round(parameters.lighting_match * 100)}
                       onChange={(value) => setParameters({
                         ...parameters,
-                        lighting_match: value
+                        lighting_match: value / 100
                       })}
                     />
                   </div>

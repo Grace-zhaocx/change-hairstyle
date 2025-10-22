@@ -6,10 +6,10 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import UploadFile, HTTPException
-from PIL import Image
+from PIL import Image as PILImage
 import aiofiles
 
-from app.models.image import Image
+from app.models.image import Image as ImageModel
 from app.schemas.image import ImageUploadResponse, ImageInfo
 from app.core.config import settings
 from app.utils.logger import logger
@@ -56,7 +56,7 @@ class ImageService:
 
             # 获取图片信息
             try:
-                with Image.open(file_path) as img:
+                with PILImage.open(file_path) as img:
                     width, height = img.size
                     format_name = img.format.lower()
             except Exception as e:
@@ -64,7 +64,7 @@ class ImageService:
                 raise HTTPException(status_code=400, detail="无效的图片文件")
 
             # 创建数据库记录
-            db_image = Image(
+            db_image = ImageModel(
                 id=file_id,
                 user_id="anonymous",  # 暂时使用匿名用户，后续添加用户系统
                 original_filename=original_filename,
@@ -114,7 +114,7 @@ class ImageService:
         """获取图片信息"""
         try:
             result = await self.db.execute(
-                select(Image).where(Image.id == image_id)
+                select(ImageModel).where(ImageModel.id == image_id)
             )
             image = result.scalar_one_or_none()
 
@@ -149,10 +149,10 @@ class ImageService:
         """获取图片列表"""
         try:
             result = await self.db.execute(
-                select(Image)
+                select(ImageModel)
                 .offset(skip)
                 .limit(limit)
-                .order_by(Image.created_at.desc())
+                .order_by(ImageModel.created_at.desc())
             )
             images = result.scalars().all()
 
@@ -185,7 +185,7 @@ class ImageService:
         """删除图片"""
         try:
             result = await self.db.execute(
-                select(Image).where(Image.id == image_id)
+                select(ImageModel).where(ImageModel.id == image_id)
             )
             image = result.scalar_one_or_none()
 
@@ -216,7 +216,7 @@ class ImageService:
         try:
             # 获取图片信息
             result = await self.db.execute(
-                select(Image).where(Image.id == image_id)
+                select(ImageModel).where(ImageModel.id == image_id)
             )
             image = result.scalar_one_or_none()
 
@@ -286,8 +286,8 @@ class ImageService:
     async def _create_thumbnail(self, image_path: Path, thumbnail_path: Path, size: tuple = (200, 200)) -> None:
         """创建缩略图"""
         try:
-            with Image.open(image_path) as img:
-                img.thumbnail(size, Image.Resampling.LANCZOS)
+            with PILImage.open(image_path) as img:
+                img.thumbnail(size, PILImage.Resampling.LANCZOS)
                 img.save(thumbnail_path, optimize=True, quality=85)
         except Exception as e:
             logger.error(f"Failed to create thumbnail: {str(e)}")
@@ -295,7 +295,7 @@ class ImageService:
     async def _validate_image_content(self, file_path: Path) -> bool:
         """验证图片内容"""
         try:
-            with Image.open(file_path) as img:
+            with PILImage.open(file_path) as img:
                 img.verify()  # 验证图片完整性
             return True
         except Exception:

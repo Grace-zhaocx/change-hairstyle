@@ -1,7 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { Card, Upload, Button, Typography, message, Progress, Row, Col, Image } from 'antd';
+import { Card, Upload, Button, Typography, Progress, Row, Col, Image, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { API_URLS } from '../api/config';
+import toast from 'react-hot-toast';
 import {
   InboxOutlined,
   UploadOutlined,
@@ -48,7 +50,7 @@ const UploadPage: React.FC = () => {
 
   const handleUpload = async (file: File) => {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
     const newFile: FileInfo = {
       uid: Date.now().toString(),
@@ -61,48 +63,73 @@ const UploadPage: React.FC = () => {
     setUploadProgress(0);
 
     try {
-      // 模拟上传进度
+      console.log('开始上传图片:', file.name);
+
+      // 创建一个带超时和进度的fetch请求
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 300000); // 5分钟超时
+
+      // 模拟进度更新（因为fetch API不直接支持进度回调）
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
+          if (prev < 90) {
+            const newProgress = prev + 10;
+            console.log('上传进度:', newProgress + '%');
+            return newProgress;
           }
-          return prev + 10;
+          return prev;
         });
       }, 200);
 
-      const response = await fetch('/api/v1/images/upload', {
+      console.log('发送请求到:', API_URLS.IMAGES.UPLOAD);
+
+      const response = await fetch(API_URLS.IMAGES.UPLOAD, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       clearInterval(progressInterval);
       setUploadProgress(100);
 
+      console.log('收到响应，状态:', response.status);
+
       if (!response.ok) {
-        throw new Error('上传失败');
+        throw new Error(`上传失败: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('上传成功，结果:', result);
 
       // 更新文件状态
       setFileList([{
         ...newFile,
         status: 'done',
-        url: result.data.file_url,
-        response: result.data
+        url: result.file_url,
+        response: result
       }]);
 
-      setUploadedImage(result.data);
-      message.success('图片上传成功！');
+      setUploadedImage(result);
+      toast.success('图片上传成功！');
 
     } catch (error) {
+      console.error('Upload error:', error);
+
+      let errorMessage = '未知错误';
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = '上传超时，请重试';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       setFileList([{
         ...newFile,
         status: 'error'
       }]);
-      message.error('图片上传失败，请重试');
+      toast.error(`图片上传失败: ${errorMessage}`);
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -199,8 +226,10 @@ const UploadPage: React.FC = () => {
 
                     {uploading ? (
                       <div>
-                        <Title level={4}>正在上传...</Title>
-                        <Progress percent={uploadProgress} className="mt-4" />
+                        <Title level={4}>正在上传图片...</Title>
+                        <Paragraph className="text-gray-500 mt-2">
+                          请稍候，正在处理您的图片
+                        </Paragraph>
                       </div>
                     ) : (
                       <div>
